@@ -1,0 +1,60 @@
+.game {
+    width: 75%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.game input {
+    text-align: center;
+    display: block;
+    margin: 0 auto;
+}
+
+.game table {
+    margin: 0 auto;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul li:hover {
+    cursor: pointer;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+thead {
+    border-bottom: 2px solid black;
+}
+
+td, th {
+    text-align: center;
+    padding: 10px;
+}
+
+.green {
+    background-color: #2de35e;
+}
+
+.yellow {
+    background-color: #f8ff36;
+}
+
+#flag {
+    width: 48px;
+    padding-top: 3px;
+}
+
+#search-field {
+    border: 2px solid black;
+    border-radius: 10px 10px 0px 0px;
+    width: 350px;
+    height: 50px;
+    font-size: 18px;
+    margin-top: 5px;
+}
