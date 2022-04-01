@@ -17,9 +17,14 @@ function Hertl(props) {
     console.log(correctPlayer);
     const maxGuesses = 8;
 
+    const today = new Date();
+    const date = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
+    console.log(date);
+
     // update doc title
     useEffect(() => {
         setCorrectPlayer(getRandomPlayer());
+        
         document.title = props.title;
     }, [props.title]);
 
@@ -48,6 +53,8 @@ function Hertl(props) {
         setSearching(false);
         setFiltered([]);
         document.getElementById("search-field").value = "";
+
+        console.log(event);
 
         let guessed = checkGuess(getFilteredPlayer(event.target.id));
         setGuesses((old) => [...old, guessed[0]]);
@@ -156,12 +163,12 @@ function Hertl(props) {
                         <input id="search-field" onChange={search} placeholder={"Guess " + (guesses.length + 1) + " of " + maxGuesses} />
                     }
                     {searching &&
-                        (<div id="searchResults">
+                        (<div className="search-results">
                             <ul>
                                 {
                                     filtered.map((player) => {
                                         return (
-                                            <li key={player.id} id={player.id} onClick={guess}>{player.name}</li>
+                                            <li key={player.id} id={player.id} onClick={guess}><img src={"https://cms.nhl.bamgrid.com/images/headshots/current/168x168/" + player.id + ".jpg"} alt="" className="small-headshot" id={player.id}></img><p id={player.id}>{player.name}, {player.team}</p></li>
                                         )
                                     })
                                 }

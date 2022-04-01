@@ -5,7 +5,7 @@
 }
 
 .game input {
-    text-align: center;
+    padding-left: 10px;
     display: block;
     margin: 0 auto;
 }
@@ -14,14 +14,46 @@
     margin: 0 auto;
 }
 
-ul {
+.search-results {
+    z-index: 999;
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 0%);
+    text-align: left;
+    width: 465px;
+    height: 160px;
+    overflow: auto;
+}
+
+.search-results ul {
+    background-color: #fff;
     list-style-type: none;
     padding: 0;
     margin: 0;
 }
 
-ul li:hover {
+.search-results ul li {
+    padding: 8px;
+    transition: 0.3s;
+}
+
+.search-results ul li:hover {
     cursor: pointer;
+    background-color: rgb(241, 241, 241);
+}
+
+.search-results ul li p {
+    display: inline;
+    padding-left: 5px;
+    padding-top: 15px;
+}
+
+.small-headshot {
+    width: 35px;
+    height: 35px;
+    border: 1px solid black;
+    border-radius: 50%;
+    vertical-align: middle;
 }
 
 table {
@@ -53,7 +85,7 @@ td, th {
 #search-field {
     border: 2px solid black;
     border-radius: 10px 10px 0px 0px;
-    width: 350px;
+    width: 450px;
     height: 50px;
     font-size: 18px;
     margin-top: 5px;

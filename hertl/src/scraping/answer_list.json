@@ -1,0 +1,32 @@
+[
+    {
+        "date": "2022-4-1",
+        "id": 8473541,
+        "name": "Jonathan Bernier",
+        "number": "45",
+        "position": "G",
+        "team_id": 1,
+        "team": "New Jersey Devils",
+        "conference": "Eastern",
+        "division": "Metropolitan",
+        "currentAge": 33,
+        "primaryNumber": "45",
+        "nationality": "CAN",
+        "height": "6' 0\"",
+        "weight": 185,
+        "formerTeams": [
+            "Laval",
+            "Lewiston",
+            "Canada",
+            "Los Angeles Kings",
+            "Manchester",
+            "Heilbronn",
+            "Toronto Maple Leafs",
+            "Toronto",
+            "Toronto Marlies",
+            "Anaheim Ducks",
+            "Colorado Avalanche",
+            "Detroit Red Wings"
+        ]
+    }
+]
