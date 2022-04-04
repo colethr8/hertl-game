@@ -28,5 +28,27 @@
             "Colorado Avalanche",
             "Detroit Red Wings"
         ]
+    },
+    {
+        "date": "2022-4-2",
+        "id": 8471214,
+        "name": "Alex Ovechkin",
+        "number": "8",
+        "position": "LW",
+        "team_id": 15,
+        "team": "Washington Capitals",
+        "conference": "Eastern",
+        "division": "Metropolitan",
+        "currentAge": 36,
+        "primaryNumber": "8",
+        "nationality": "RUS",
+        "height": "6' 3\"",
+        "weight": 238,
+        "formerTeams": [
+            "Russia U17",
+            "Dyn'o Moscow 2",
+            "Russia",
+            "Dynamo Moscow"
+        ]
     }
 ]

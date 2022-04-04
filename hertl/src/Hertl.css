@@ -58,6 +58,7 @@
 
 table {
     border-collapse: collapse;
+    width: 75vw;
 }
 
 thead {

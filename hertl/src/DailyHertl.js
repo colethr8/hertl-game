@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import Cookies from 'universal-cookie';
 import './Hertl.css';
 import playerList from './scraping/nhl_players.json';
 import answerList from './scraping/answer_list.json';
 
+const cookies = new Cookies();
+
 function DailyHertl(props) {
     // state variables
+    const [err, setErr] = useState(null);
     const [correctPlayer, setCorrectPlayer] = useState();
     const [playing, setPlaying] = useState(true);
     const [searching, setSearching] = useState(false);
@@ -13,16 +17,136 @@ function DailyHertl(props) {
     const [oneGuess, setOneGuess] = useState(false);
     const [won, setWon] = useState(false);
     const [lost, setLost] = useState(false);
+    const [date, setDate] = useState();
 
     const maxGuesses = 8;
 
+    // checks guessed player object against the correct player
+    function checkGuess(player) {
+        let updated = checks(player, correctPlayer);
+
+        // guessed player
+        if (player.id === correctPlayer.id) {
+            setWon(true);
+            setPlaying(false);
+            saveStats(true, player);
+            return [updated, true];
+        }
+
+        return [updated, false];
+    }
+
+    const checks = useCallback((player, correct) => {
+        let updated = player;
+
+        if (player.name === correct.name) {
+            updated.name_color = "green";
+        }
+
+        if (player.team === correct.team) {
+            updated.team_color = "green";
+        } else if (correct.formerTeams.includes(player.team)) {
+            updated.team_color = "yellow"
+        }
+
+        if (player.division === correct.division) {
+            updated.division_color = "green";
+        } else if  (player.conference === correct.conference) {
+            updated.division_color = "yellow";
+        }
+
+        if (player.nationality === correct.nationality) {
+            updated.nationality_color = "green";
+        }
+
+        if (player.position === correct.position) {
+            updated.position_color = "green";
+        } else if ((["LW", "C", "RW"].includes(correct.position) && ["LW", "C", "RW"].includes(player.position))) {
+            updated.position_color = "yellow";
+        }
+
+        if (player.number === correct.number) {
+            updated.number_color = "green";
+        } else if (player.number >= (correct.number - 3) && player.number <= (correct.number + 3)) {
+            updated.number_color = "yellow";
+        }
+
+        if (player.currentAge === correct.currentAge) {
+            updated.age_color = "green";
+        } else if (player.currentAge >= (correct.currentAge - 3) && player.currentAge <= (correct.currentAge + 3)) {
+            updated.age_color = "yellow";
+        }
+
+        const guess_height = convert_height(player.height);
+        const correct_height = convert_height(correct.height);
+        if (guess_height === correct_height) {
+            updated.height_color = "green";
+        } else if (guess_height >= (correct_height - 3) && guess_height <= (correct_height + 3)) {
+            updated.height_color = "yellow";
+        }
+
+        if (player.weight === correct.weight) {
+            updated.weight_color = "green";
+        } else if (player.weight >= (correct.weight - 10) && player.weight <= (correct.weight + 10)) {
+            updated.weight_color = "yellow";
+        }
+
+        return updated;
+    }, []);
+
     // update doc title
     useEffect(() => {
+        if (cookies.get("hertl-game") !== undefined) {
+            //console.log('exists');
+        }
+
+        document.title = props.title;
+
         const today = new Date();
         const date = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
-        setCorrectPlayer(getPlayer(date));
-        document.title = props.title;
-    }, [props.title]);
+
+        if (localStorage.getItem("daily-hertl-stats") === null) {
+            try {
+                setCorrectPlayer(getPlayer(date));
+                setDate(date);
+            } catch (e) {
+                setErr(e.message);
+            }
+        } else {
+            try {
+                const correct = getPlayer(date);
+                const stats = JSON.parse(localStorage.getItem("daily-hertl-stats"));
+                if (date in stats) {
+                    setPlaying(false);
+                    setOneGuess(true);
+
+                    let ids = stats[date];
+                    let guessList = [];
+                    ids.forEach((id) => {
+                        playerList.forEach((player) => {
+                            if (player.id === id) {
+                                guessList.push(player);
+                                return;
+                            }
+                        });
+                    });
+                    let final = [];
+
+                    console.log(correct);
+                    guessList.forEach((guess) => {
+                        final.push(checks(guess, correct));
+                    });
+
+                    setGuesses(final);
+                } else {
+                    setCorrectPlayer(correct);
+                    setDate(date);
+                }
+            } catch (e) {
+                setErr(e.message);
+            }
+        }
+    }, [props.title, checks]);
 
     // generates random player from player list
     function getPlayer(date) {
@@ -32,6 +156,11 @@ function DailyHertl(props) {
                 selected = answer;
             }
         });
+        
+        if (selected === undefined) {
+            throw new Error("Invalid date");
+        }
+
         return selected;
     }
 
@@ -58,6 +187,11 @@ function DailyHertl(props) {
 
         let guessed = checkGuess(getFilteredPlayer(event.target.id));
         setGuesses((old) => [...old, guessed[0]]);
+
+        const json_str = JSON.stringify([...guesses, guessed[0]]);
+        console.log(json_str);
+        cookies.set("hertl-game", json_str, { path: '/' });
+
         if (!oneGuess) {
             setOneGuess(true);
         }
@@ -65,7 +199,7 @@ function DailyHertl(props) {
         if (!guessed[1] && guesses.length >= (maxGuesses-1)) {
             setPlaying(false);
             setLost(true);
-            saveStats(false);
+            saveStats(false, guessed[0]);
         }
     }
 
@@ -79,74 +213,7 @@ function DailyHertl(props) {
         });
         return selected;
     }
-
-    // checks guessed player object against the correct player
-    function checkGuess(player) {
-        let updated = player;
-
-        if (player.name === correctPlayer.name) {
-            updated.name_color = "green";
-        }
-
-        if (player.team === correctPlayer.team) {
-            updated.team_color = "green";
-        } else if (correctPlayer.formerTeams.includes(player.team)) {
-            updated.team_color = "yellow"
-        }
-
-        if (player.division === correctPlayer.division) {
-            updated.division_color = "green";
-        } else if  (player.conference === correctPlayer.conference) {
-            updated.division_color = "yellow";
-        }
-
-        if (player.nationality === correctPlayer.nationality) {
-            updated.nationality_color = "green";
-        }
-
-        if (player.position === correctPlayer.position) {
-            updated.position_color = "green";
-        } else if ((["LW", "C", "RW"].includes(correctPlayer.position) && ["LW", "C", "RW"].includes(player.position))) {
-            updated.position_color = "yellow";
-        }
-
-        if (player.number === correctPlayer.number) {
-            updated.number_color = "green";
-        } else if (player.number >= (correctPlayer.number - 3) && player.number <= (correctPlayer.number + 3)) {
-            updated.number_color = "yellow";
-        }
-
-        if (player.currentAge === correctPlayer.currentAge) {
-            updated.age_color = "green";
-        } else if (player.currentAge >= (correctPlayer.currentAge - 3) && player.currentAge <= (correctPlayer.currentAge + 3)) {
-            updated.age_color = "yellow";
-        }
-
-        const guess_height = convert_height(player.height);
-        const correct_height = convert_height(correctPlayer.height);
-        if (guess_height === correct_height) {
-            updated.height_color = "green";
-        } else if (guess_height >= (correct_height - 3) && guess_height <= (correct_height + 3)) {
-            updated.height_color = "yellow";
-        }
-
-        if (player.weight === correctPlayer.weight) {
-            updated.weight_color = "green";
-        } else if (player.weight >= (correctPlayer.weight - 10) && player.weight <= (correctPlayer.weight + 10)) {
-            updated.weight_color = "yellow";
-        }
-
-        // guessed player
-        if (player.id === correctPlayer.id) {
-            setWon(true);
-            setPlaying(false);
-            saveStats(true);
-            return [updated, true];
-        }
-
-        return [updated, false];
-    }
-
+    
     function convert_height(height) {
         const regex = /^(\d)'\s(\d{1,2})"$/;
         const found = height.match(regex);
@@ -157,8 +224,9 @@ function DailyHertl(props) {
         window.location.reload(false);
     }
 
-    function saveStats(didWin) {
-        if (localStorage.getItem("daily-hertl") === null) {
+    function saveStats(didWin, lastGuess) {
+        console.log(lastGuess);
+        if (localStorage.getItem("daily-hertl-stats") === null) {
             let object = {
                 currentStreak: 0,
                 maxStreak: 0,
@@ -173,6 +241,10 @@ function DailyHertl(props) {
                 seven: 0,
                 eight: 0
             };
+
+            let ids = getGuessIds();
+            let final = [...ids, lastGuess.id];
+            object[date] = final;
             
             if (didWin) {
                 object.currentStreak += 1;
@@ -209,16 +281,69 @@ function DailyHertl(props) {
                 }
             }
 
-            localStorage.setItem("daily-hertl", JSON.stringify(object));
+            localStorage.setItem("daily-hertl-stats", JSON.stringify(object));
         } else {
-            console.log(localStorage.getItem("daily-hertl"));
+            let object = JSON.parse(localStorage.getItem("daily-hertl-stats"));
+            const guessList = getGuessIds();
+            console.log(guessList);
+            object[date] = guessList;
+            object.played += 1;
+
+            if (didWin) {
+                object.currentStreak += 1;
+                object.maxStreak += 1;
+                object.won += 1;
+                switch(guesses.length + 1) {
+                    case 1:
+                        object.one += 1;
+                        break;
+                    case 2:
+                        object.two += 1;
+                        break;
+                    case 3:
+                        object.three += 1;
+                        break;
+                    case 4:
+                        object.four += 1;
+                        break;
+                    case 5:
+                        object.five += 1;
+                        break;
+                    case 6:
+                        object.six += 1;
+                        break;
+                    case 7:
+                        object.seven += 1;
+                        break;
+                    case 8:
+                        object.eight += 1;
+                        break;
+                    default:
+                        refresh()
+                        break;
+                }
+            }
+
+            localStorage.setItem("daily-hertl-stats", JSON.stringify(object));
         }
+    }
+
+    function getGuessIds() {
+        let list = [];
+        guesses.forEach((guess) => {
+            list.push(guess.id);
+        });
+        return list;
     }
 
     return (
         <main>
             <div className="container">
-                <div className="game">
+                {err !== null &&
+                    <p>{err}</p>
+                }
+                {err === null &&
+                (<div className="game">
                     {playing &&
                         <input id="search-field" onChange={search} placeholder={"Guess " + (guesses.length + 1) + " of " + maxGuesses} />
                     }
@@ -235,7 +360,7 @@ function DailyHertl(props) {
                             </ul>
                         </div>)
                     }
-                    {oneGuess &&
+                    {/*oneGuess &&*/
                     (<div id="guesses-table">
                         <table>
                             <thead>
@@ -286,7 +411,8 @@ function DailyHertl(props) {
                     {(lost || won) &&
                     <button onClick={refresh}>Play Again</button> 
                     }
-                </div>
+                </div>)
+                }
             </div>
         </main>
     );
