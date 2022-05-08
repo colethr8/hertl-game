@@ -1,10 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
-import Cookies from 'universal-cookie';
 import './Hertl.css';
 import playerList from './scraping/nhl_players.json';
 import answerList from './scraping/answer_list.json';
-
-const cookies = new Cookies();
 
 function DailyHertl(props) {
     // state variables
@@ -65,9 +62,11 @@ function DailyHertl(props) {
             updated.position_color = "yellow";
         }
 
-        if (player.number === correct.number) {
+        const player_number = parseInt(player.number);
+        const correct_number = parseInt(correct.number);
+        if (player_number === correct_number) {
             updated.number_color = "green";
-        } else if (player.number >= (correct.number - 3) && player.number <= (correct.number + 3)) {
+        } else if (player_number >= (correct_number - 3) && player_number <= (correct_number + 3)) {
             updated.number_color = "yellow";
         }
 
@@ -85,42 +84,40 @@ function DailyHertl(props) {
             updated.height_color = "yellow";
         }
 
-        if (player.weight === correct.weight) {
-            updated.weight_color = "green";
-        } else if (player.weight >= (correct.weight - 10) && player.weight <= (correct.weight + 10)) {
-            updated.weight_color = "yellow";
-        }
-
         return updated;
     }, []);
 
     // update doc title
     useEffect(() => {
-        if (cookies.get("hertl-game") !== undefined) {
-            //console.log('exists');
-        }
-
         document.title = props.title;
 
         const today = new Date();
         const date = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
+        setDate(date);
 
-        if (localStorage.getItem("daily-hertl-stats") === null) {
-            try {
-                setCorrectPlayer(getPlayer(date));
-                setDate(date);
-            } catch (e) {
-                setErr(e.message);
-            }
-        } else {
+        try {
+            setCorrectPlayer(getPlayer(date));
+        } catch (e) {
+            setErr(e.message);
+        }
+
+        if (localStorage.getItem("daily-hertl-stats") !== null) {
             try {
                 const correct = getPlayer(date);
                 const stats = JSON.parse(localStorage.getItem("daily-hertl-stats"));
                 if (date in stats) {
-                    setPlaying(false);
-                    setOneGuess(true);
+                    if (stats[date]['finished'] === 1) {
+                        setPlaying(false);
+                        setWon(true);
+                    } else if (stats[date]['finished'] === 2) {
+                        setPlaying(false);
+                        setLost(true);  
+                    } else {
+                        setCorrectPlayer(correct);
+                        setOneGuess(true);
+                    }
 
-                    let ids = stats[date];
+                    let ids = stats[date]['guesses'];
                     let guessList = [];
                     ids.forEach((id) => {
                         playerList.forEach((player) => {
@@ -140,7 +137,6 @@ function DailyHertl(props) {
                     setGuesses(final);
                 } else {
                     setCorrectPlayer(correct);
-                    setDate(date);
                 }
             } catch (e) {
                 setErr(e.message);
@@ -187,10 +183,7 @@ function DailyHertl(props) {
 
         let guessed = checkGuess(getFilteredPlayer(event.target.id));
         setGuesses((old) => [...old, guessed[0]]);
-
-        const json_str = JSON.stringify([...guesses, guessed[0]]);
-        console.log(json_str);
-        cookies.set("hertl-game", json_str, { path: '/' });
+        saveGuess(guessed[0]);
 
         if (!oneGuess) {
             setOneGuess(true);
@@ -224,14 +217,13 @@ function DailyHertl(props) {
         window.location.reload(false);
     }
 
-    function saveStats(didWin, lastGuess) {
-        console.log(lastGuess);
+    function saveGuess(guess) {
         if (localStorage.getItem("daily-hertl-stats") === null) {
             let object = {
                 currentStreak: 0,
                 maxStreak: 0,
                 won: 0,
-                played: 1,
+                played: 0,
                 one: 0,
                 two: 0,
                 three: 0,
@@ -241,99 +233,69 @@ function DailyHertl(props) {
                 seven: 0,
                 eight: 0
             };
-
-            let ids = getGuessIds();
-            let final = [...ids, lastGuess.id];
-            object[date] = final;
-            
-            if (didWin) {
-                object.currentStreak += 1;
-                object.maxStreak += 1;
-                object.won += 1;
-                switch(guesses.length + 1) {
-                    case 1:
-                        object.one += 1;
-                        break;
-                    case 2:
-                        object.two += 1;
-                        break;
-                    case 3:
-                        object.three += 1;
-                        break;
-                    case 4:
-                        object.four += 1;
-                        break;
-                    case 5:
-                        object.five += 1;
-                        break;
-                    case 6:
-                        object.six += 1;
-                        break;
-                    case 7:
-                        object.seven += 1;
-                        break;
-                    case 8:
-                        object.eight += 1;
-                        break;
-                    default:
-                        refresh()
-                        break;
-                }
-            }
-
+            object[date] = {
+                finished: 0,
+                guesses: [guess.id]
+            };
             localStorage.setItem("daily-hertl-stats", JSON.stringify(object));
         } else {
             let object = JSON.parse(localStorage.getItem("daily-hertl-stats"));
-            const guessList = getGuessIds();
-            console.log(guessList);
-            object[date] = guessList;
-            object.played += 1;
-
-            if (didWin) {
-                object.currentStreak += 1;
-                object.maxStreak += 1;
-                object.won += 1;
-                switch(guesses.length + 1) {
-                    case 1:
-                        object.one += 1;
-                        break;
-                    case 2:
-                        object.two += 1;
-                        break;
-                    case 3:
-                        object.three += 1;
-                        break;
-                    case 4:
-                        object.four += 1;
-                        break;
-                    case 5:
-                        object.five += 1;
-                        break;
-                    case 6:
-                        object.six += 1;
-                        break;
-                    case 7:
-                        object.seven += 1;
-                        break;
-                    case 8:
-                        object.eight += 1;
-                        break;
-                    default:
-                        refresh()
-                        break;
-                }
-            }
-
+            object[date]['guesses'] = [...object[date]['guesses'], guess.id];
+            console.log(object[date]);
             localStorage.setItem("daily-hertl-stats", JSON.stringify(object));
         }
     }
 
-    function getGuessIds() {
-        let list = [];
-        guesses.forEach((guess) => {
-            list.push(guess.id);
-        });
-        return list;
+    function saveStats(didWin) {
+        let object = JSON.parse(localStorage.getItem("daily-hertl-stats"));
+        object.played += 1;
+        if (didWin) {
+            object[date]['finished'] = 1;
+            object = increment(object);
+        } else {
+            object[date]['finished'] = 2;
+            object.currentStreak = 0;
+        }
+        localStorage.setItem("daily-hertl-stats", JSON.stringify(object));
+    }
+
+    function increment(object) {
+        object.currentStreak += 1;
+        object.won += 1;
+        if (object.currentStreak > object.maxStreak) {
+            object.maxStreak = object.currentStreak;
+        }
+        switch(guesses.length + 1) {
+            case 1:
+                object.one += 1;
+                break;
+            case 2:
+                object.two += 1;
+                break;
+            case 3:
+                object.three += 1;
+                break;
+            case 4:
+                object.four += 1;
+                break;
+            case 5:
+                object.five += 1;
+                break;
+            case 6:
+                object.six += 1;
+                break;
+            case 7:
+                object.seven += 1;
+                break;
+            case 8:
+                object.eight += 1;
+                break;
+            default:
+                refresh()
+                break;
+        }
+
+        return object;
     }
 
     return (
@@ -360,7 +322,7 @@ function DailyHertl(props) {
                             </ul>
                         </div>)
                     }
-                    {/*oneGuess &&*/
+                    {
                     (<div id="guesses-table">
                         <table>
                             <thead>
@@ -373,7 +335,6 @@ function DailyHertl(props) {
                                     <th>Number</th>
                                     <th>Age</th>
                                     <th>Height</th>
-                                    <th>Weight</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -389,7 +350,6 @@ function DailyHertl(props) {
                                                 <td className={guess.number_color}>{guess.number}</td>
                                                 <td className={guess.age_color}>{guess.currentAge}</td>
                                                 <td className={guess.height_color}>{guess.height}</td>
-                                                <td className={guess.weight_color}>{guess.weight}</td>
                                             </tr>
                                         )
                                     })
@@ -407,9 +367,6 @@ function DailyHertl(props) {
                     (<div id="lost">
                         <p>You lost. The player was {correctPlayer.name}</p>
                     </div>)
-                    }
-                    {(lost || won) &&
-                    <button onClick={refresh}>Play Again</button> 
                     }
                 </div>)
                 }

@@ -1,6 +1,6 @@
 [
     {
-        "date": "2022-4-1",
+        "date": "2022-4-11",
         "id": 8473541,
         "name": "Jonathan Bernier",
         "number": "45",
@@ -30,7 +30,7 @@
         ]
     },
     {
-        "date": "2022-4-2",
+        "date": "2022-4-26",
         "id": 8471214,
         "name": "Alex Ovechkin",
         "number": "8",
@@ -49,6 +49,32 @@
             "Dyn'o Moscow 2",
             "Russia",
             "Dynamo Moscow"
+        ]
+    },
+    {
+        "date": "2022-4-7",
+        "id": 8471698,
+        "name": "T.J. Oshie",
+        "number": "77",
+        "position": "RW",
+        "team_id": 15,
+        "team": "Washington Capitals",
+        "conference": "Eastern",
+        "division": "Metropolitan",
+        "currentAge": 35,
+        "primaryNumber": "77",
+        "nationality": "USA",
+        "height": "6' 0\"",
+        "weight": 187,
+        "formerTeams": [
+            "Warroad High",
+            "Warroad",
+            "Sioux Falls",
+            "North Dakota",
+            "United States",
+            "St. Louis Blues",
+            "U.S.A.",
+            "USA"
         ]
     }
 ]
